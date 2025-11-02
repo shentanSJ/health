@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>体脂计算器</title>
+    <style>
+        *{box-sizing:border-box;margin:0;padding:0;font-family:'PingFang SC','Microsoft YaHei',sans-serif}
+        body{background:linear-gradient(135deg,#6a11cb 0%,#2575fc 100%);color:#333;line-height:1.6;padding:15px;min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center}
+        .container{background-color:rgba(255,255,255,0.95);border-radius:15px;box-shadow:0 8px 25px rgba(0,0,0,0.15);padding:20px;width:100%;max-width:400px;margin:15px 0}
+        h1{text-align:center;color:#2c3e50;margin-bottom:20px;font-size:1.6rem}
+        .form-group{margin-bottom:15px}
+        label{display:block;margin-bottom:6px;font-weight:600;color:#34495e;font-size:0.9rem}
+        input,select{width:100%;padding:10px 12px;border:1.5px solid #e1e8ed;border-radius:8px;font-size:15px;transition:all 0.2s}
+        input:focus,select:focus{border-color:#3498db;outline:none;box-shadow:0 0 0 2px rgba(52,152,219,0.2)}
+        .radio-group{display:flex;gap:12px;margin-top:5px}
+        .radio-option{display:flex;align-items:center;gap:5px;font-size:0.9rem}
+        .radio-option input{width:auto}
+        button{background:linear-gradient(to right,#3498db,#2c3e50);color:white;border:none;padding:12px;border-radius:8px;font-size:16px;font-weight:600;cursor:pointer;width:100%;transition:all 0.2s;margin-top:8px}
+        button:active{transform:translateY(1px)}
+        .result{margin-top:20px;padding:15px;border-radius:8px;background-color:#f8f9fa;text-align:center;display:none}
+        .result h2{color:#2c3e50;margin-bottom:12px;font-size:1.3rem}
+        .bmi-value,.bfp-value{font-size:2rem;font-weight:700;margin:8px 0}
+        .bmi-category,.bfp-category{font-size:1rem;font-weight:600;margin:8px 0;padding:6px 12px;border-radius:15px;display:inline-block}
+        .category-underweight{background-color:#3498db;color:white}
+        .category-normal{background-color:#2ecc71;color:white}
+        .category-overweight{background-color:#f39c12;color:white}
+        .category-obese{background-color:#e74c3c;color:white}
+        .info{margin-top:12px;font-size:0.8rem;color:#7f8c8d}
+        footer{text-align:center;color:rgba(255,255,255,0.8);margin-top:15px;font-size:0.8rem}
+        @media (max-width:480px){.container{padding:15px 12px}}
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>体脂计算器</h1>
+        <form id="bodyFatForm">
+            <div class="form-group">
+                <label for="gender">性别</label>
+                <div class="radio-group">
+                    <div class="radio-option">
+                        <input type="radio" id="male" name="gender" value="male" checked>
+                        <label for="male">男性</label>
+                    </div>
+                    <div class="radio-option">
+                        <input type="radio" id="female" name="gender" value="female">
+                        <label for="female">女性</label>
+                    </div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label for="age">年龄</label>
+                <input type="number" id="age" min="18" max="80" required>
+            </div>
+            <div class="form-group">
+                <label for="height">身高 (cm)</label>
+                <input type="number" id="height" min="100" max="250" required>
+            </div>
+            <div class="form-group">
+                <label for="weight">体重 (kg)</label>
+                <input type="number" id="weight" min="30" max="200" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="waist">腰围 (cm)</label>
+                <input type="number" id="waist" min="50" max="150" step="0.1" required>
+            </div>
+            <div class="form-group">
+                <label for="neck">颈围 (cm)</label>
+                <input type="number" id="neck" min="20" max="50" step="0.1" required>
+            </div>
+            <div class="form-group" id="hipGroup" style="display:none">
+                <label for="hip">臀围 (cm) - 仅女性</label>
+                <input type="number" id="hip" min="60" max="150" step="0.1">
+            </div>
+            <button type="submit">计算体脂率</button>
+        </form>
+        <div class="result" id="result">
+            <h2>计算结果</h2>
+            <div class="bmi-value" id="bmiValue">--</div>
+            <div class="bmi-category" id="bmiCategory">--</div>
+            <div class="bfp-value" id="bfpValue">--</div>
+            <div class="bfp-category" id="bfpCategory">--</div>
+            <div class="info">体脂率根据美国海军身体围度法计算，仅供参考</div>
+        </div>
+    </div>
+    <footer>
+        <p>无需安装 · 随时使用 · 保护隐私</p>
+    </footer>
+    <script>
+        document.getElementById('bodyFatForm').addEventListener('submit',function(e){e.preventDefault();calculateBodyFat()});
+        document.querySelectorAll('input[name="gender"]').forEach(function(radio){radio.addEventListener('change',function(){document.getElementById('hipGroup').style.display=this.value==='female'?'block':'none'})});
+        function calculateBodyFat(){
+            var gender=document.querySelector('input[name="gender"]:checked').value;
+            var age=parseFloat(document.getElementById('age').value);
+            var height=parseFloat(document.getElementById('height').value);
+            var weight=parseFloat(document.getElementById('weight').value);
+            var waist=parseFloat(document.getElementById('waist').value);
+            var neck=parseFloat(document.getElementById('neck').value);
+            var hip=gender==='female'?parseFloat(document.getElementById('hip').value):0;
+            var heightInMeter=height/100;
+            var bmi=weight/(heightInMeter*heightInMeter);
+            var bmiCategory,bmiClass;
+            if(bmi<18.5){bmiCategory="体重过轻";bmiClass="category-underweight"}
+            else if(bmi<24){bmiCategory="正常体重";bmiClass="category-normal"}
+            else if(bmi<28){bmiCategory="超重";bmiClass="category-overweight"}
+            else{bmiCategory="肥胖";bmiClass="category-obese"}
+            var bodyFatPercentage;
+            if(gender==='male'){bodyFatPercentage=495/(1.0324-0.19077*Math.log10(waist-neck)+0.15456*Math.log10(height))-450}
+            else{bodyFatPercentage=495/(1.29579-0.35004*Math.log10(waist+hip-neck)+0.22100*Math.log10(height))-450}
+            var bfpCategory,bfpClass;
+            if(gender==='male'){
+                if(bodyFatPercentage<6){bfpCategory="必需脂肪";bfpClass="category-underweight"}
+                else if(bodyFatPercentage<14){bfpCategory="运动员";bfpClass="category-normal"}
+                else if(bodyFatPercentage<18){bfpCategory="健康";bfpClass="category-normal"}
+                else if(bodyFatPercentage<25){bfpCategory="正常";bfpClass="category-overweight"}
+                else{bfpCategory="肥胖";bfpClass="category-obese"}
+            }else{
+                if(bodyFatPercentage<14){bfpCategory="必需脂肪";bfpClass="category-underweight"}
+                else if(bodyFatPercentage<21){bfpCategory="运动员";bfpClass="category-normal"}
+                else if(bodyFatPercentage<25){bfpCategory="健康";bfpClass="category-normal"}
+                else if(bodyFatPercentage<32){bfpCategory="正常";bfpClass="category-overweight"}
+                else{bfpCategory="肥胖";bfpClass="category-obese"}
+            }
+            document.getElementById('bmiValue').textContent=bmi.toFixed(1);
+            document.getElementById('bmiCategory').textContent=bmiCategory;
+            document.getElementById('bmiCategory').className='bmi-category '+bmiClass;
+            document.getElementById('bfpValue').textContent=bodyFatPercentage.toFixed(1)+"%";
+            document.getElementById('bfpCategory').textContent=bfpCategory;
+            document.getElementById('bfpCategory').className='bfp-category '+bfpClass;
+            document.getElementById('result').style.display='block';
+            document.getElementById('result').scrollIntoView({behavior:'smooth'});
+        }
+    </script>
+</body>
+</html>
